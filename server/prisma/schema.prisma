@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  MANAGER
+  ENGINEER
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+}
+
+enum ProjectStatus {
+  PLANNING
+  ACTIVE
+  COMPLETED
+}
+
+model User {
+  id             Int          @id @default(autoincrement())
+  name           String
+  email          String       @unique
+  password       String
+  role           Role
+  skills         String?      // comma-separated list (e.g. "React,Node,SQL")
+  seniority      String?      // e.g., "Junior", "Mid", "Senior"
+  maxCapacity    Int?         // e.g., 100 = full-time
+  department     String?
+  employmentType EmploymentType?
+  assignments    Assignment[]
+  createdProjects Project[]   @relation("UserCreatedProjects")
+}
+
+model Project {
+  id             Int           @id @default(autoincrement())
+  name           String
+  description    String?
+  requiredSkills String?       // e.g., "Node,SQL"
+  teamSize       Int?
+  status         ProjectStatus @default(PLANNING)
+  startDate      DateTime?
+  endDate        DateTime?
+  createdAt      DateTime      @default(now())
+  createdBy      User          @relation("UserCreatedProjects", fields: [createdById], references: [id])
+  createdById    Int
+  assignments    Assignment[]
+  isClosed       Boolean       @default(false)
+}
+
+model Assignment {
+  id         Int      @id @default(autoincrement())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     Int
+  project    Project  @relation(fields: [projectId], references: [id])
+  projectId  Int
+  role       String?  // e.g., "Backend Developer"
+  allocation Int      // % of engineer's maxCapacity (e.g., 50)
+  startDate  DateTime?
+  endDate    DateTime?
+}
