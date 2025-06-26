@@ -7,7 +7,7 @@ export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false); // Optional UX touch
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -16,13 +16,22 @@ export default function SignIn() {
 
     try {
       const res = await api.post("/auth/login", { email, password });
-      const { token, role, name } = res.data;
+      const { token, role, name, email: userEmail } = res.data;
 
+      // Save all needed values to localStorage
       localStorage.setItem("token", token);
       localStorage.setItem("role", role);
       localStorage.setItem("name", name);
+      localStorage.setItem("email", userEmail); // used in UserDropdown
 
-      navigate(role === "MANAGER" ? "/manager" : "/engineer");
+      // Navigate based on role
+      if (role === "MANAGER") {
+        navigate("/manager");
+      } else if (role === "ENGINEER") {
+        navigate("/engineer");
+      } else {
+        setError("Invalid user role");
+      }
     } catch (err) {
       setError(err.response?.data?.message || "Login failed");
     } finally {

@@ -21,64 +21,43 @@ export default function App() {
     <Router>
       <ScrollToTop />
       <Routes>
-        {/* Public Login Route */}
+        {/* Public Route */}
         <Route path="/" element={<SignIn />} />
 
-        {/* Protected Routes */}
+        {/* MANAGER routes */}
         <Route
-          path="/manager"
           element={
             <ProtectedRoute allowedRoles={["MANAGER"]}>
-              <AppLayout>
-                <ManagerDashboard />
-              </AppLayout>
+              <AppLayout />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route path="/manager" element={<ManagerDashboard />} />
+          <Route path="/add-engineer" element={<AddEngineer />} />
+        </Route>
 
+        {/* ENGINEER routes */}
         <Route
-          path="/engineer"
           element={
             <ProtectedRoute allowedRoles={["ENGINEER"]}>
-              <AppLayout>
-                <EngineerDashboard />
-              </AppLayout>
+              <AppLayout />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route path="/engineer" element={<EngineerDashboard />} />
+        </Route>
 
+        {/* Shared between MANAGER + ENGINEER */}
         <Route
-          path="/add-engineer"
-          element={
-            <ProtectedRoute allowedRoles={["MANAGER"]}>
-              <AppLayout>
-                <AddEngineer />
-              </AppLayout>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/projects"
           element={
             <ProtectedRoute allowedRoles={["MANAGER", "ENGINEER"]}>
-              <AppLayout>
-                <Projects />
-              </AppLayout>
+              <AppLayout />
             </ProtectedRoute>
           }
-        />
-
-        <Route
-          path="/assignments"
-          element={
-            <ProtectedRoute allowedRoles={["MANAGER", "ENGINEER"]}>
-              <AppLayout>
-                <Assignments />
-              </AppLayout>
-            </ProtectedRoute>
-          }
-        />
+        >
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/assignments" element={<Assignments />} />
+        </Route>
 
         {/* 404 fallback */}
         <Route path="*" element={<NotFound />} />

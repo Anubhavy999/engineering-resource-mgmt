@@ -6,9 +6,7 @@ import path from 'path';
 export default defineConfig({
   plugins: [
     react(),
-    svgr({
-      exportAsDefault: true,
-    }),
+    svgr({ exportAsDefault: true }), // ✅ Critical
   ],
   resolve: {
     alias: {
