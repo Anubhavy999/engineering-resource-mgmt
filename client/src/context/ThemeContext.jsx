@@ -9,7 +9,7 @@ export const ThemeProvider = ({ children }) => {
 
   useEffect(() => {
     // This code will only run on the client side
-    const savedTheme = localStorage.getItem("theme")
+    const savedTheme = sessionStorage.getItem("theme")
     const initialTheme = savedTheme || "light" // Default to light theme
 
     setTheme(initialTheme)
@@ -18,7 +18,7 @@ export const ThemeProvider = ({ children }) => {
 
   useEffect(() => {
     if (isInitialized) {
-      localStorage.setItem("theme", theme)
+      sessionStorage.setItem("theme", theme)
       if (theme === "dark") {
         document.documentElement.classList.add("dark")
       } else {

@@ -16,13 +16,14 @@ export default function SignIn() {
 
     try {
       const res = await api.post("/auth/login", { email, password });
-      const { token, role, name, email: userEmail } = res.data;
+      const { token, role, name, email: userEmail, id } = res.data;
 
-      // Save all needed values to localStorage
-      localStorage.setItem("token", token);
-      localStorage.setItem("role", role);
-      localStorage.setItem("name", name);
-      localStorage.setItem("email", userEmail); // used in UserDropdown
+      // Save all needed values to sessionStorage
+      sessionStorage.setItem("token", token);
+      sessionStorage.setItem("role", role);
+      sessionStorage.setItem("name", name);
+      sessionStorage.setItem("email", userEmail); // used in UserDropdown
+      sessionStorage.setItem("id", id); // <-- add this line
 
       // Navigate based on role
       if (role === "MANAGER") {
@@ -32,6 +33,8 @@ export default function SignIn() {
       } else {
         setError("Invalid user role");
       }
+
+      console.log("Login response:", res.data);
     } catch (err) {
       setError(err.response?.data?.message || "Login failed");
     } finally {
@@ -43,7 +46,7 @@ export default function SignIn() {
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <form
         onSubmit={handleLogin}
-        className="bg-white p-8 shadow-md rounded w-full max-w-sm"
+        className="bg-gradient-to-br from-white via-blue-50 to-purple-50 p-10 shadow-2xl rounded-3xl w-full max-w-sm transition-all duration-300 border-t-8 border-blue-400 hover:shadow-[0_12px_36px_0_rgba(59,130,246,0.18)] hover:scale-105 hover:border-blue-600"
       >
         <h2 className="text-xl font-bold mb-6 text-center text-blue-700">
           Sign In

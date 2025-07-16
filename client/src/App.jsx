@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import AppLayout from "./layout/AppLayout";
 
@@ -11,7 +11,10 @@ import EngineerDashboard from "./pages/Dashboard/EngineerDashboard";
 import AddEngineer from "./pages/AddEngineer";
 import Projects from "./pages/Projects";
 import Assignments from "./pages/Assignments";
+import EngineerProjects from "./pages/EngineerProjects";
+import EngineerAssignments from "./pages/EngineerAssignments";
 import NotFound from "./pages/NotFound";
+import UserProfile from "./pages/UserProfile";
 
 // Route Guard
 import ProtectedRoute from "./routes/ProtectedRoute";
@@ -21,10 +24,22 @@ export default function App() {
     <Router>
       <ScrollToTop />
       <Routes>
-        {/* Public Route */}
+        {/* Public Login */}
         <Route path="/" element={<SignIn />} />
 
-        {/* MANAGER routes */}
+        {/* Profile route for all authenticated users */}
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute allowedRoles={["MANAGER", "ENGINEER", "SUPER-ADMIN"]}>
+              <AppLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<UserProfile />} />
+        </Route>
+
+        {/* Manager-only sections */}
         <Route
           element={
             <ProtectedRoute allowedRoles={["MANAGER"]}>
@@ -34,9 +49,11 @@ export default function App() {
         >
           <Route path="/manager" element={<ManagerDashboard />} />
           <Route path="/add-engineer" element={<AddEngineer />} />
+          <Route path="/projects" element={<Projects />} />
+          <Route path="/assignments" element={<Assignments />} />
         </Route>
 
-        {/* ENGINEER routes */}
+        {/* Engineer-only sections */}
         <Route
           element={
             <ProtectedRoute allowedRoles={["ENGINEER"]}>
@@ -45,21 +62,11 @@ export default function App() {
           }
         >
           <Route path="/engineer" element={<EngineerDashboard />} />
+          <Route path="/engineer-projects" element={<EngineerProjects />} />
+          <Route path="/engineer-assignments" element={<EngineerAssignments />} />
         </Route>
 
-        {/* Shared between MANAGER + ENGINEER */}
-        <Route
-          element={
-            <ProtectedRoute allowedRoles={["MANAGER", "ENGINEER"]}>
-              <AppLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route path="/projects" element={<Projects />} />
-          <Route path="/assignments" element={<Assignments />} />
-        </Route>
-
-        {/* 404 fallback */}
+        {/* Catch‑all 404 */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>

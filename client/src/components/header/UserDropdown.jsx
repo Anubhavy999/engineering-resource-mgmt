@@ -22,10 +22,10 @@ export default function UserDropdown() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const navigate = useNavigate();
   const dropdownRef = useRef(null);
-  const name = localStorage.getItem("name") || "User";
+  const name = sessionStorage.getItem("name") || "User";
 
   const handleLogout = () => {
-    localStorage.clear();
+    sessionStorage.clear();
     navigate("/");
   };
 
@@ -52,7 +52,15 @@ export default function UserDropdown() {
 
       {dropdownOpen && (
         <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow z-50 dark:bg-gray-800 dark:border-gray-700">
-          {/* Only Logout shown */}
+          <button
+            onClick={() => {
+              setDropdownOpen(false);
+              navigate("/profile");
+            }}
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-700"
+          >
+            Profile
+          </button>
           <button
             onClick={handleLogout}
             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"

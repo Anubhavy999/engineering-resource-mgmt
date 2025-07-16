@@ -25,44 +25,134 @@ enum ProjectStatus {
 }
 
 model User {
-  id             Int          @id @default(autoincrement())
-  name           String
-  email          String       @unique
-  password       String
-  role           Role
-  skills         String?      // comma-separated list (e.g. "React,Node,SQL")
-  seniority      String?      // e.g., "Junior", "Mid", "Senior"
-  maxCapacity    Int?         // e.g., 100 = full-time
-  department     String?
-  employmentType EmploymentType?
-  assignments    Assignment[]
-  createdProjects Project[]   @relation("UserCreatedProjects")
+  id           Int     @id @default(autoincrement())
+  name         String
+  email        String  @unique
+  password     String
+  role         Role    @default(ENGINEER)
+  skills       String?
+  maxCapacity  Int?
+  managerId    Int?
+  manager      User?   @relation("Team", fields: [managerId], references: [id])
+  reports      User[]  @relation("Team")
+  isSuperAdmin Boolean @default(false)
+
+  // Profile fields
+  firstName    String?
+  lastName     String?
+  phone        String?
+  bio          String?
+  avatarUrl    String?
+  department   String?
+
+  // Address fields
+  country      String?
+  city         String?
+  postalCode   String?
+  taxId        String?
+
+  // Activity & Stats
+  lastLogin         DateTime?
+  projectsAssigned  Int?      @default(0)
+  tasksCompleted    Int?      @default(0)
+  performance       String?
+
+  // Security
+  lastPasswordChange DateTime?
+
+  createdProjects Project[] @relation("UserCreatedProjects")
+  managedProjects Project[] @relation("ManagedProjects")
+  assignments     Assignment[]
+  assignedTasks   Task[]    @relation("TaskAssignedTo")
+  taskComments    TaskComment[] // User's authored comments
+  certifications String?
+  experience     String?
+  notifications Notification[]
 }
 
 model Project {
   id             Int           @id @default(autoincrement())
-  name           String
+  name           String        @unique
   description    String?
-  requiredSkills String?       // e.g., "Node,SQL"
+  requiredSkills String?
   teamSize       Int?
   status         ProjectStatus @default(PLANNING)
   startDate      DateTime?
   endDate        DateTime?
   createdAt      DateTime      @default(now())
-  createdBy      User          @relation("UserCreatedProjects", fields: [createdById], references: [id])
-  createdById    Int
-  assignments    Assignment[]
-  isClosed       Boolean       @default(false)
+  completionRequested Boolean @default(false)
+
+  createdBy   User @relation("UserCreatedProjects", fields: [createdById], references: [id])
+  createdById Int
+
+  manager      User?   @relation("ManagedProjects", fields: [managerId], references: [id])
+  managerId    Int?
+
+  assignments Assignment[]
+  tasks       Task[]
+  isClosed    Boolean      @default(false)
 }
 
 model Assignment {
-  id         Int      @id @default(autoincrement())
-  user       User     @relation(fields: [userId], references: [id])
+  id         Int       @id @default(autoincrement())
+  user       User      @relation(fields: [userId], references: [id])
   userId     Int
-  project    Project  @relation(fields: [projectId], references: [id])
+  project    Project   @relation(fields: [projectId], references: [id])
   projectId  Int
-  role       String?  // e.g., "Backend Developer"
-  allocation Int      // % of engineer's maxCapacity (e.g., 50)
+  task       Task?     @relation(fields: [taskId], references: [id])
+  taskId     Int?      // NO @unique, allows many assignments per task
+  role       String?
+  allocation Int
   startDate  DateTime?
   endDate    DateTime?
+}
+
+model Task {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  status      String   @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED
+  priority    String   @default("MEDIUM")  // LOW, MEDIUM, HIGH
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId   Int
+  assignedTo  User?    @relation("TaskAssignedTo", fields: [assignedToId], references: [id])
+  assignedToId Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  assignments Assignment[] // Now one-to-many
+  comments    TaskComment[] // Multiple comments per task
+  completionRequested Boolean @default(false)
+}
+
+model TaskComment {
+  id        Int      @id @default(autoincrement())
+  task      Task     @relation(fields: [taskId], references: [id])
+  taskId    Int
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  Int
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model AssignmentBackup {
+  id         Int    @id @default(autoincrement())
+  userId     Int
+  projectId  Int
+  taskId     Int?
+  allocation Int
+  role       String?
+  startDate  DateTime?
+  endDate    DateTime?
+  backedUpAt DateTime @default(now())
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   String
+  type      String   // e.g. 'TASK_ASSIGNED', 'COMPLETION_REQUESTED'
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
 }

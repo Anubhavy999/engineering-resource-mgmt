@@ -6,7 +6,14 @@ const { PrismaClient } = require('@prisma/client');
 const app = express();
 const prisma = new PrismaClient();
 
-app.use(cors());
+const allowedOrigins = process.env.CLIENT_URL
+  ? process.env.CLIENT_URL.split(",")
+  : ["http://localhost:5173"];
+
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true
+}));
 app.use(express.json());
 
 
@@ -23,10 +30,13 @@ app.use('/api/assignments', assignmentRoutes);
 const analyticsRoutes = require('./routes/analytics');
 app.use('/api/analytics', analyticsRoutes);
 
-const userRoutes = require('./routes/user');
-app.use('/api/users', userRoutes);
+const notificationsRouter = require('./routes/notifications');
+app.use('/api/notifications', notificationsRouter);
 
+app.use('/api/users', require('./routes/user'));
 
+const managerRoutes = require('./routes/manager');
+app.use('/api/manager', managerRoutes);
 
 
 
@@ -34,7 +44,7 @@ app.get('/', (req, res) => {
   res.send('API is running');
 });
 
-// Add user, auth, and project routes here later
+
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
