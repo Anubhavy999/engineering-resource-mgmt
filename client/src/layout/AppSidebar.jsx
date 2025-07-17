@@ -106,13 +106,13 @@ export default function AppSidebar() {
               <Link
                 to={path}
                 className={`group flex items-center gap-3 px-3 py-2 rounded-xl relative transition-all
-                  focus:outline-none focus:ring-2 focus:ring-blue-300
+                  focus:outline-none focus:ring-2 focus:ring-blue-300 w-full
                   ${
                     isActive(path)
                       ? "bg-blue-50 text-blue-700 font-semibold shadow border-l-4 border-blue-600"
                       : "text-gray-600 hover:bg-blue-100 hover:text-blue-700"
                   }
-                  ${!isExpanded && !isHovered ? "justify-center" : "justify-start"}`}
+                  ${!isExpanded && !isHovered ? "justify-center" : "justify-start"} ${isMobileOpen ? "justify-start items-center w-full" : ""}`}
                 tabIndex={0}
               >
                 <span

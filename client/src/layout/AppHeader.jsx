@@ -106,9 +106,8 @@ const AppHeader = () => {
             )}
           </button>
 
-          <Link to="/" className="lg:hidden">
-            <img className="dark:hidden" src="./images/logo/logo.svg" alt="Logo" />
-            <img className="hidden dark:block" src="./images/logo/logo-dark.svg" alt="Logo" />
+          <Link to="/" className="lg:hidden flex items-center">
+            <span className="text-xl font-bold text-blue-700 tracking-wide">ERM</span>
           </Link>
 
           {/* Quick Actions Button */}
