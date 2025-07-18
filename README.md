@@ -80,8 +80,7 @@ A modern, full-stack Engineering Resource Management System for teams and organi
 
 ## 📂 Project Structure
 
-```
-engineering-resource-mgmt/
+```engineering-resource-mgmt/
 ├── client/         # React frontend (Vite, TailwindCSS)
 │   ├── src/
 │   ├── public/
@@ -160,6 +159,35 @@ npm run dev
 
 ---
 
+## 🤖 AI Usage in Development
+
+This project was developed with significant assistance from AI-powered tools to accelerate delivery and ensure code quality:
+
+- **AI IDEs & Assistants:**
+  - Used [Cursor](https://www.cursor.so/) and [GitHub Copilot](https://github.com/features/copilot) for code generation, refactoring, and boilerplate setup in both frontend and backend.
+  - Leveraged [ChatGPT](https://chat.openai.com/) for architectural decisions, debugging, and best practices.
+- **Code Review & Optimization:**
+  - Used AI suggestions to optimize database queries, improve React component structure, and enforce consistent code style.
+  - AI was used to generate sample data and seed scripts for rapid prototyping.
+- **Problem Solving:**
+  - Consulted AI for REST API design, authentication flows, and capacity calculation logic.
+
+**Examples of AI Acceleration:**
+- Generated initial Prisma schema and React component scaffolding using Copilot and ChatGPT.
+- Used AI to quickly create CRUD endpoints and validation logic for assignments and projects.
+- Refactored repetitive code and improved error handling with AI suggestions.
+
+**Challenges & Resolution:**
+- Some AI-generated code required manual adjustment to fit the specific business logic (e.g., capacity validation, role-based access).
+- Ensured all AI-generated code was reviewed, tested, and modified as needed to match project requirements and security standards.
+
+**Validation Approach:**
+- Every AI suggestion was reviewed for correctness and security before integration.
+- Manual and automated testing was performed to validate all critical features.
+- Code was refactored and commented to ensure maintainability and clarity.
+
+---
+
 ## 👤 Demo Access
 
 ### Manager
@@ -187,3 +215,4 @@ MIT
 
 ## 📬 Contact
 Created by [Anubhav Yadav](https://github.com/Anubhavy999) — feel free to reach out!
+

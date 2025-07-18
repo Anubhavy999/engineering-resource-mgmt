@@ -1,4 +1,3 @@
-// prisma/seed.js
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
@@ -30,6 +29,7 @@ async function main() {
     },
   });
 
+  
   // Create engineers if not exist
   const alice = await prisma.user.upsert({
     where: { email: 'alice@gmail.com' },
@@ -85,6 +85,61 @@ async function main() {
     },
   });
 
+  const carol = await prisma.user.upsert({
+    where: { email: 'carol@gmail.com' },
+    update: {},
+    create: {
+      name: 'Carol Smith',
+      email: 'carol@gmail.com',
+      password: '$2b$10$w1Qw8Qw8Qw8Qw8Qw8Qw8QeQw8Qw8Qw8Qw8Qw8Qw8Qw8Qw8Qw8Qw8', // hashed "password"
+      role: 'ENGINEER',
+      skills: 'Python,React',
+      maxCapacity: 50,
+      firstName: 'Carol',
+      lastName: 'Smith',
+      phone: '+1 555-9012',
+      bio: 'Data Engineer',
+      avatarUrl: null,
+      country: 'USA',
+      city: 'Austin',
+      postalCode: '73301',
+      taxId: 'US456123',
+      lastLogin: new Date(),
+      projectsAssigned: 2,
+      tasksCompleted: 4,
+      performance: 'Good',
+      lastPasswordChange: new Date()
+    },
+  });
+
+  const dave = await prisma.user.upsert({
+    where: { email: 'dave@gmail.com' },
+    update: {},
+    create: {
+      name: 'Dave Lee',
+      email: 'dave@gmail.com',
+      password: '$2b$10$w2Qw8Qw8Qw8Qw8Qw8Qw8QeQw8Qw8Qw8Qw8Qw8Qw8Qw8Qw8Qw8Qw8', // hashed "password"
+      role: 'ENGINEER',
+      skills: 'Node,Go',
+      maxCapacity: 100,
+      firstName: 'Dave',
+      lastName: 'Lee',
+      phone: '+1 555-3456',
+      bio: 'Fullstack Engineer',
+      avatarUrl: null,
+      country: 'USA',
+      city: 'Seattle',
+      postalCode: '98101',
+      taxId: 'US654321',
+      lastLogin: new Date(),
+      projectsAssigned: 1,
+      tasksCompleted: 2,
+      performance: 'Average',
+      lastPasswordChange: new Date()
+    },
+  });
+
+
   // Create Projects
   const project1 = await prisma.project.upsert({
     where: { name: 'CRM App' },
@@ -100,6 +155,52 @@ async function main() {
       createdById: alice.role === 'MANAGER' ? alice.id : bob.id // or Shyam.id if you prefer
     },
   });
+ 
+  const project2 = await prisma.project.upsert({
+    where: { name: 'Analytics Platform' },
+    update: {},
+    create: {
+      name: 'Analytics Platform',
+      description: 'Big data analytics and reporting',
+      requiredSkills: 'Python,React',
+      teamSize: 4,
+      status: 'PLANNING',
+      startDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 10), // in 10 days
+      endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 90), // in 90 days
+      createdById: 1 // Shyam (manager)
+    },
+  });
+
+  const project3 = await prisma.project.upsert({
+    where: { name: 'Mobile App' },
+    update: {},
+    create: {
+      name: 'Mobile App',
+      description: 'Cross-platform mobile application',
+      requiredSkills: 'React,Java',
+      teamSize: 3,
+      status: 'ACTIVE',
+      startDate: new Date(Date.now() - 1000 * 60 * 60 * 24 * 20), // started 20 days ago
+      endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 40), // in 40 days
+      createdById: 1 // Shyam (manager)
+    },
+  });
+
+  const project4 = await prisma.project.upsert({
+    where: { name: 'DevOps Automation' },
+    update: {},
+    create: {
+      name: 'DevOps Automation',
+      description: 'CI/CD and infrastructure automation',
+      requiredSkills: 'Go,Node',
+      teamSize: 2,
+      status: 'PLANNING',
+      startDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30), // in 30 days
+      endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 120), // in 120 days
+      createdById: 1 // Shyam (manager)
+    },
+  });
+
 
   // Assign Engineers
   await prisma.assignment.createMany({
@@ -116,6 +217,149 @@ async function main() {
       },
     ],
     skipDuplicates: true,
+  });
+
+  await prisma.assignment.createMany({
+    data: [
+      {
+        userId: carol.id,
+        projectId: project2.id,
+        allocation: 40,
+      },
+      {
+        userId: alice.id,
+        projectId: project2.id,
+        allocation: 30,
+      },
+      // New assignments for project3
+      {
+        userId: bob.id,
+        projectId: project3.id,
+        allocation: 60,
+      },
+      {
+        userId: dave.id,
+        projectId: project3.id,
+        allocation: 50,
+      },
+      // New assignments for project4
+      {
+        userId: dave.id,
+        projectId: project4.id,
+        allocation: 70,
+      },
+      {
+        userId: carol.id,
+        projectId: project4.id,
+        allocation: 30,
+      },
+      {
+        userId: alice.id,
+        projectId: project4.id,
+        allocation: 20,
+      },
+    ],
+    skipDuplicates: true,
+  });
+
+  // Add tasks to projects
+  const task1 = await prisma.task.upsert({
+    where: { title: 'Design Database Schema' },
+    update: {},
+    create: {
+      title: 'Design Database Schema',
+      description: 'Create and optimize the database schema for CRM App',
+      status: 'IN_PROGRESS',
+      priority: 'HIGH',
+      projectId: project1.id,
+      assignedToId: alice.id,
+    },
+  });
+  const task2 = await prisma.task.upsert({
+    where: { title: 'Implement Authentication' },
+    update: {},
+    create: {
+      title: 'Implement Authentication',
+      description: 'Add JWT-based authentication to CRM App',
+      status: 'PENDING',
+      priority: 'MEDIUM',
+      projectId: project1.id,
+      assignedToId: bob.id,
+    },
+  });
+  const task3 = await prisma.task.upsert({
+    where: { title: 'Build Analytics Dashboard' },
+    update: {},
+    create: {
+      title: 'Build Analytics Dashboard',
+      description: 'Develop dashboard for Analytics Platform',
+      status: 'PENDING',
+      priority: 'HIGH',
+      projectId: project2.id,
+      assignedToId: carol.id,
+    },
+  });
+  const task4 = await prisma.task.upsert({
+    where: { title: 'Integrate Data Sources' },
+    update: {},
+    create: {
+      title: 'Integrate Data Sources',
+      description: 'Connect various data sources to Analytics Platform',
+      status: 'PENDING',
+      priority: 'MEDIUM',
+      projectId: project2.id,
+      assignedToId: alice.id,
+    },
+  });
+  const task5 = await prisma.task.upsert({
+    where: { title: 'Develop Mobile UI' },
+    update: {},
+    create: {
+      title: 'Develop Mobile UI',
+      description: 'Create UI for Mobile App',
+      status: 'IN_PROGRESS',
+      priority: 'HIGH',
+      projectId: project3.id,
+      assignedToId: bob.id,
+    },
+  });
+  const task6 = await prisma.task.upsert({
+    where: { title: 'Setup CI/CD Pipeline' },
+    update: {},
+    create: {
+      title: 'Setup CI/CD Pipeline',
+      description: 'Automate deployment for DevOps Automation',
+      status: 'PENDING',
+      priority: 'HIGH',
+      projectId: project4.id,
+      assignedToId: dave.id,
+    },
+  });
+
+  // Link assignments to tasks (where possible)
+  await prisma.assignment.updateMany({
+    where: { userId: alice.id, projectId: project1.id },
+    data: { taskId: task1.id, role: 'Database Designer' },
+  });
+  await prisma.assignment.updateMany({
+    where: { userId: bob.id, projectId: project1.id },
+    data: { taskId: task2.id, role: 'Backend Developer' },
+  });
+  await prisma.assignment.updateMany({
+    where: { userId: carol.id, projectId: project2.id },
+    data: { taskId: task3.id, role: 'Data Engineer' },
+  });
+  await prisma.assignment.updateMany({
+    where: { userId: alice.id, projectId: project2.id },
+    data: { taskId: task4.id, role: 'Integrator' },
+  });
+  await prisma.assignment.updateMany({
+    where: { userId: bob.id, projectId: project3.id },
+    data: { taskId: task5.id, role: 'Mobile UI Developer' },
+  });
+  await prisma.assignment.updateMany({
+    where: { userId: dave.id, projectId: project4.id },
+    data: { taskId: task6.id, role: 'DevOps Engineer' },
   });
 
   console.log('🌱 Seed data created!');
