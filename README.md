@@ -1,5 +1,9 @@
 # Engineering Resource Management System (ERM)
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-online-brightgreen?style=for-the-badge&logo=vercel)](https://engineering-resource-mgmt.vercel.app)
+
+🚀 [Live Demo](https://engineering-resource-mgmt.vercel.app)
+
 A modern, full-stack Engineering Resource Management System for teams and organizations. Built with the MERN stack, PostgreSQL, and Prisma ORM, ERM empowers managers and engineers to collaborate, track, and optimize engineering resources with a beautiful, professional UI/UX.
 
 ---
