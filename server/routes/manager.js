@@ -1,46 +1,51 @@
 const express = require("express");
-const pool = require("../config/db");
 const router = express.Router();
-
+const prisma = require("../prisma/client");
 
 router.get("/summary", async (req, res) => {
   try {
-    const totalEngRes = await pool.query(
-      "SELECT COUNT(*) FROM \"User\" WHERE role = 'ENGINEER'"
+    // Count engineers
+    const engineersCount = await prisma.user.count({ where: { role: "ENGINEER" } });
+
+    // Count projects
+    const projectsCount = await prisma.project.count();
+
+    // Get all engineers
+    const engineers = await prisma.user.findMany({
+      where: { role: "ENGINEER" },
+      select: { id: true, name: true, maxCapacity: true },
+    });
+
+    // Aggregate allocations per engineer
+    const allocations = await prisma.assignment.groupBy({
+      by: ["userId"],
+      _sum: { allocation: true },
+    });
+    const userIdToAllocated = new Map(
+      allocations.map((a) => [a.userId, a._sum.allocation || 0])
     );
-    const totalProjRes = await pool.query(
-      "SELECT COUNT(*) FROM \"Project\""
-    );
-    // total allocated capacity per engineer
-    const allocByEng = await pool.query(`
-      SELECT u.id, u.name,
-        COALESCE(100 - SUM(a.allocation), 100) AS remaining_capacity
-      FROM "User" u
-      LEFT JOIN "Assignment" a
-        ON a."userId" = u.id
-      WHERE u.role = 'ENGINEER'
-      GROUP BY u.id, u.name
-    `);
-    const remainingCapacity = allocByEng.rows.reduce(
-      (sum, r) => sum + parseFloat(r.remaining_capacity),
-      0
-    );
-    // underutilized (remaining ≥ 30%)
-    const underutilized = allocByEng.rows
-      .filter((r) => parseFloat(r.remaining_capacity) >= 30)
-      .map((r) => ({
-        name: r.name,
-        capacity: parseFloat(r.remaining_capacity),
-      }));
+
+    const engineerCapacities = engineers.map((eng) => {
+      const max = typeof eng.maxCapacity === "number" ? eng.maxCapacity : 100;
+      const allocated = userIdToAllocated.get(eng.id) || 0;
+      const remaining = Math.max(0, max - allocated);
+      return { id: eng.id, name: eng.name, remaining };
+    });
+
+    const totalRemainingCapacity = engineerCapacities.reduce((sum, e) => sum + e.remaining, 0);
+
+    const underutilized = engineerCapacities
+      .filter((e) => e.remaining >= 30)
+      .map((e) => ({ name: e.name, capacity: e.remaining }));
 
     res.json({
-      engineers: parseInt(totalEngRes.rows[0].count, 10),
-      projects: parseInt(totalProjRes.rows[0].count, 10),
-      capacityAvailable: remainingCapacity,
+      engineers: engineersCount,
+      projects: projectsCount,
+      capacityAvailable: totalRemainingCapacity,
       underutilized,
     });
   } catch (err) {
-    console.error(err);
+    console.error("Manager summary error:", err);
     res.status(500).json({ message: "Server error retrieving summary" });
   }
 });

@@ -2,8 +2,7 @@
 
 const express = require('express');
 const router  = express.Router();
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../prisma/client');
 const jwt    = require('jsonwebtoken');
 const { authenticate, authorizeRole } = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
@@ -18,23 +17,55 @@ router.get(
   authorizeRole('MANAGER'),
   async (req, res) => {
     try {
-      const users = await prisma.user.findMany({
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          role: true,
-          managerId: true,
-          isSuperAdmin: true,
-          skills: true,
-          maxCapacity: true,
-          firstName: true,
-          lastName: true,
-          department: true,
-          lastLogin: true
-        }
-      });
-      return res.json(users);
+      // Primary query: full profile fields
+      try {
+        const users = await prisma.user.findMany({
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            managerId: true,
+            isSuperAdmin: true,
+            skills: true,
+            maxCapacity: true,
+            firstName: true,
+            lastName: true,
+            department: true,
+            lastLogin: true
+          }
+        });
+        return res.json(users);
+      } catch (innerErr) {
+        // Fallback: minimal fields if DB schema is behind migrations
+        console.warn('Falling back to minimal user fields due to schema mismatch:', innerErr?.message);
+        const basic = await prisma.user.findMany({
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            managerId: true,
+            maxCapacity: true,
+            skills: true,
+          }
+        });
+        const enriched = basic.map(u => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          managerId: u.managerId ?? null,
+          isSuperAdmin: false,
+          skills: u.skills ?? null,
+          maxCapacity: typeof u.maxCapacity === 'number' ? u.maxCapacity : 100,
+          firstName: null,
+          lastName: null,
+          department: null,
+          lastLogin: null,
+        }));
+        return res.json(enriched);
+      }
     } catch (err) {
       console.error('Error fetching users:', err);
       return res.status(500).json({ message: 'Server error fetching users.' });

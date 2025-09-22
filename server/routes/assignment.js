@@ -1,9 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../prisma/client');
 const { authenticate, authorizeRole } = require('../middleware/auth');
-
-const prisma = new PrismaClient();
 
 // MANAGER assigns engineer to a project
 router.post('/', authenticate, authorizeRole('MANAGER'), async (req, res) => {
@@ -126,20 +124,34 @@ router.get('/', authenticate, async (req, res) => {
     else if (req.user.role === 'MANAGER' && req.query.userId) {
       where.userId = parseInt(req.query.userId);
     }
-
-    const assignments = await prisma.assignment.findMany({
-      where,
-      include: {
-        user: true,
-        project: {
-          include: {
-            assignments: { include: { user: true } },
-          }
+    try {
+      // Preferred shape (with team members via project.assignments)
+      const assignments = await prisma.assignment.findMany({
+        where,
+        include: {
+          user: true,
+          project: {
+            include: {
+              assignments: { include: { user: true } },
+            }
+          },
+          task: true,
         },
-        task: true,
-      },
-    });
-    res.json(assignments);
+      });
+      return res.json(assignments);
+    } catch (innerErr) {
+      console.warn('Falling back to lite assignments include due to schema mismatch:', innerErr?.message);
+      // Fallback shape (sufficient for Assignments.jsx; Engineer views will gracefully omit team lists)
+      const assignmentsLite = await prisma.assignment.findMany({
+        where,
+        include: {
+          user: true,
+          project: true,
+          task: true,
+        },
+      });
+      return res.json(assignmentsLite);
+    }
   } catch (err) {
     res.status(500).json({ message: 'Failed to fetch assignments.' });
   }

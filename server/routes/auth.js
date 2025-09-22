@@ -1,11 +1,9 @@
 // server/routes/auth.js
 const express = require('express');
 const router = express.Router();
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../prisma/client');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-
-const prisma = new PrismaClient();
 
 // Register
 router.post('/register', async (req, res) => {
@@ -50,33 +48,40 @@ router.post('/login', async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(401).json({ message: 'Invalid password' });
 
-        // Update lastLogin on successful login
-        await prisma.user.update({
-            where: { id: user.id },
-            data: { lastLogin: new Date() }
-        });
+    // Best-effort profile updates (tolerate older DB schemas)
+    try {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { lastLogin: new Date() }
+      });
+    } catch (e) {
+      console.warn('Skipping lastLogin update (schema mismatch):', e?.message);
+    }
 
-        // Fetch latest stats
-        const freshUser = await prisma.user.findUnique({ where: { id: user.id } });
-        const { projectsAssigned = 0, tasksCompleted = 0 } = freshUser;
+    try {
+      // Fetch latest stats if fields exist; if not, skip silently
+      const freshUser = await prisma.user.findUnique({ where: { id: user.id } });
+      const projectsAssigned = Number(freshUser?.projectsAssigned ?? 0);
+      const tasksCompleted = Number(freshUser?.tasksCompleted ?? 0);
 
-        let performance = "Needs Improvement";
-        if (projectsAssigned > 0) {
-            const ratio = tasksCompleted / projectsAssigned;
-            if (tasksCompleted >= projectsAssigned) performance = "Excellent";
-            else if (ratio >= 0.75) performance = "Good";
-            else if (ratio >= 0.5) performance = "Average";
-        } else {
-            performance = "No Projects Assigned";
-        }
+      let performance = freshUser?.performance || "Needs Improvement";
+      if (projectsAssigned > 0) {
+        const ratio = tasksCompleted / projectsAssigned;
+        if (tasksCompleted >= projectsAssigned) performance = "Excellent";
+        else if (ratio >= 0.75) performance = "Good";
+        else if (ratio >= 0.5) performance = "Average";
+        else performance = "Needs Improvement";
+      } else if (projectsAssigned === 0) {
+        performance = "No Projects Assigned";
+      }
 
-        // Update performance
-        console.log("Updating performance for user", user.id, "to", performance);
-        await prisma.user.update({
-            where: { id: user.id },
-            data: { performance }
-        });
-        console.log("Performance updated!");
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { performance }
+      });
+    } catch (e) {
+      console.warn('Skipping performance update (schema mismatch):', e?.message);
+    }
 
         const token = jwt.sign(
             { id: user.id, role: user.role },

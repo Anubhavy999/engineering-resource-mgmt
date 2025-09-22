@@ -1,9 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../prisma/client');
 const { authenticate, authorizeRole } = require('../middleware/auth');
-
-const prisma = new PrismaClient();
 
 // CREATE Project with Tasks (Manager only)
 router.post('/', authenticate, authorizeRole('MANAGER'), async (req, res) => {
@@ -176,15 +174,28 @@ router.post('/tasks/:taskId/request-completion', authenticate, authorizeRole('EN
       data: { completionRequested: true },
       include: { project: true, assignedTo: true }
     });
-    // Notify the manager (or super-admin) of the project
-    if (task.project && task.project.managerId) {
-      await prisma.notification.create({
-        data: {
-          userId: task.project.managerId,
-          type: 'COMPLETION_REQUESTED',
-          message: `Completion requested by ${task.assignedTo?.name || 'an engineer'} for task ${task.title} in project ${task.project.name}`
-        }
-      });
+    // Notify the responsible manager/admin for the project
+    try {
+      let recipientId = null;
+      if (task.project?.managerId) {
+        recipientId = task.project.managerId;
+      } else if (task.project?.createdById) {
+        recipientId = task.project.createdById;
+      } else {
+        const superAdmin = await prisma.user.findFirst({ where: { isSuperAdmin: true } });
+        if (superAdmin) recipientId = superAdmin.id;
+      }
+      if (recipientId) {
+        await prisma.notification.create({
+          data: {
+            userId: recipientId,
+            type: 'COMPLETION_REQUESTED',
+            message: `Completion requested by ${task.assignedTo?.name || 'an engineer'} for task ${task.title} in project ${task.project?.name || ''}`
+          }
+        });
+      }
+    } catch (notifyErr) {
+      console.warn('Failed to create manager notification for completion request:', notifyErr?.message);
     }
     res.json({ message: 'Completion requested', task });
   } catch (err) {
@@ -226,13 +237,17 @@ router.post('/tasks/:taskId/approve-completion', authenticate, authorizeRole('MA
       });
       console.log("Performance updated!");
       // Send notification to engineer
-      await prisma.notification.create({
-        data: {
-          userId: task.assignedToId,
-          type: 'COMPLETION_APPROVED',
-          message: `Your completion request for task "${task.title}" in project "${task.project?.name || ''}" was approved.`
-        }
-      });
+      try {
+        await prisma.notification.create({
+          data: {
+            userId: task.assignedToId,
+            type: 'COMPLETION_APPROVED',
+            message: `Your completion request for task "${task.title}" in project "${task.project?.name || ''}" was approved.`
+          }
+        });
+      } catch (notifyErr) {
+        console.warn('Failed to notify engineer on approval:', notifyErr?.message);
+      }
     }
     res.json({ message: 'Task marked as completed', task });
   } catch (err) {
@@ -251,13 +266,17 @@ router.post('/tasks/:taskId/reject-completion', authenticate, authorizeRole('MAN
     });
     // Send notification to engineer if assigned
     if (task.assignedToId) {
-      await prisma.notification.create({
-        data: {
-          userId: task.assignedToId,
-          type: 'COMPLETION_REJECTED',
-          message: `Your completion request for task "${task.title}" in project "${task.project?.name || ''}" was rejected.`
-        }
-      });
+      try {
+        await prisma.notification.create({
+          data: {
+            userId: task.assignedToId,
+            type: 'COMPLETION_REJECTED',
+            message: `Your completion request for task "${task.title}" in project "${task.project?.name || ''}" was rejected.`
+          }
+        });
+      } catch (notifyErr) {
+        console.warn('Failed to notify engineer on rejection:', notifyErr?.message);
+      }
     }
     res.json({ message: 'Completion request rejected', task });
   } catch (err) {
@@ -309,7 +328,8 @@ router.get('/tasks/:taskId/comments/count', authenticate, async (req, res) => {
     const count = await prisma.taskComment.count({ where: { taskId } });
     res.json({ count });
   } catch (err) {
-    res.status(500).json({ count: 0 });
+    console.warn('Comment count fallback for task', taskId, err?.message);
+    res.json({ count: 0 });
   }
 });
 

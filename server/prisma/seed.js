@@ -262,78 +262,63 @@ async function main() {
     skipDuplicates: true,
   });
 
+  // Helper: ensure a task exists by (title, projectId)
+  const ensureTask = async ({ title, description, status, priority, projectId, assignedToId }) => {
+    const existing = await prisma.task.findFirst({ where: { title, projectId } });
+    if (existing) return existing;
+    return prisma.task.create({
+      data: { title, description, status, priority, projectId, assignedToId }
+    });
+  };
+
   // Add tasks to projects
-  const task1 = await prisma.task.upsert({
-    where: { title: 'Design Database Schema' },
-    update: {},
-    create: {
-      title: 'Design Database Schema',
-      description: 'Create and optimize the database schema for CRM App',
-      status: 'IN_PROGRESS',
-      priority: 'HIGH',
-      projectId: project1.id,
-      assignedToId: alice.id,
-    },
+  const task1 = await ensureTask({
+    title: 'Design Database Schema',
+    description: 'Create and optimize the database schema for CRM App',
+    status: 'IN_PROGRESS',
+    priority: 'HIGH',
+    projectId: project1.id,
+    assignedToId: alice.id,
   });
-  const task2 = await prisma.task.upsert({
-    where: { title: 'Implement Authentication' },
-    update: {},
-    create: {
-      title: 'Implement Authentication',
-      description: 'Add JWT-based authentication to CRM App',
-      status: 'PENDING',
-      priority: 'MEDIUM',
-      projectId: project1.id,
-      assignedToId: bob.id,
-    },
+  const task2 = await ensureTask({
+    title: 'Implement Authentication',
+    description: 'Add JWT-based authentication to CRM App',
+    status: 'PENDING',
+    priority: 'MEDIUM',
+    projectId: project1.id,
+    assignedToId: bob.id,
   });
-  const task3 = await prisma.task.upsert({
-    where: { title: 'Build Analytics Dashboard' },
-    update: {},
-    create: {
-      title: 'Build Analytics Dashboard',
-      description: 'Develop dashboard for Analytics Platform',
-      status: 'PENDING',
-      priority: 'HIGH',
-      projectId: project2.id,
-      assignedToId: carol.id,
-    },
+  const task3 = await ensureTask({
+    title: 'Build Analytics Dashboard',
+    description: 'Develop dashboard for Analytics Platform',
+    status: 'PENDING',
+    priority: 'HIGH',
+    projectId: project2.id,
+    assignedToId: carol.id,
   });
-  const task4 = await prisma.task.upsert({
-    where: { title: 'Integrate Data Sources' },
-    update: {},
-    create: {
-      title: 'Integrate Data Sources',
-      description: 'Connect various data sources to Analytics Platform',
-      status: 'PENDING',
-      priority: 'MEDIUM',
-      projectId: project2.id,
-      assignedToId: alice.id,
-    },
+  const task4 = await ensureTask({
+    title: 'Integrate Data Sources',
+    description: 'Connect various data sources to Analytics Platform',
+    status: 'PENDING',
+    priority: 'MEDIUM',
+    projectId: project2.id,
+    assignedToId: alice.id,
   });
-  const task5 = await prisma.task.upsert({
-    where: { title: 'Develop Mobile UI' },
-    update: {},
-    create: {
-      title: 'Develop Mobile UI',
-      description: 'Create UI for Mobile App',
-      status: 'IN_PROGRESS',
-      priority: 'HIGH',
-      projectId: project3.id,
-      assignedToId: bob.id,
-    },
+  const task5 = await ensureTask({
+    title: 'Develop Mobile UI',
+    description: 'Create UI for Mobile App',
+    status: 'IN_PROGRESS',
+    priority: 'HIGH',
+    projectId: project3.id,
+    assignedToId: bob.id,
   });
-  const task6 = await prisma.task.upsert({
-    where: { title: 'Setup CI/CD Pipeline' },
-    update: {},
-    create: {
-      title: 'Setup CI/CD Pipeline',
-      description: 'Automate deployment for DevOps Automation',
-      status: 'PENDING',
-      priority: 'HIGH',
-      projectId: project4.id,
-      assignedToId: dave.id,
-    },
+  const task6 = await ensureTask({
+    title: 'Setup CI/CD Pipeline',
+    description: 'Automate deployment for DevOps Automation',
+    status: 'PENDING',
+    priority: 'HIGH',
+    projectId: project4.id,
+    assignedToId: dave.id,
   });
 
   // Link assignments to tasks (where possible)
